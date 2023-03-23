@@ -1,12 +1,13 @@
-<div align="center">    
- 
-# CoMER: Modeling Coverage for Transformer-based Handwritten Mathematical Expression Recognition  
- 
+<div align="center">
+
+# CoMER: Modeling Coverage for Transformer-based Handwritten Mathematical Expression Recognition
+
 [![arXiv](https://img.shields.io/badge/arXiv-2207.04410-b31b1b.svg)](https://arxiv.org/abs/2207.04410)
 
 </div>
 
 ## Project structure
+
 ```bash
 ├── README.md
 ├── comer               # model definition folder
@@ -31,9 +32,10 @@
 └── train.py
 ```
 
-## Install dependencies   
+## Install dependencies
+
 ```bash
-cd CoMER
+adversaryconda install pandoc=1.19.2.1 -c conda-forgecd CoMER
 # install project   
 conda create -y -n CoMER python=3.7
 conda activate CoMER
@@ -43,16 +45,19 @@ conda install pytorch-lightning=1.4.9 torchmetrics=0.6.0 -c conda-forge
 # evaluating dependency
 conda install pandoc=1.19.2.1 -c conda-forge
 pip install -e .
- ```
+```
 
 ## Training
+
 Next, navigate to CoMER folder and run `train.py`. It may take **7~8** hours on **4** NVIDIA 2080Ti gpus using ddp.
+
 ```bash
 # train CoMER(Fusion) model using 4 gpus and ddp
 python train.py --config config.yaml  
 ```
 
 You may change the `config.yaml` file to train different models
+
 ```yaml
 # train BTTR(baseline) model
 cross_coverage: false
@@ -72,6 +77,7 @@ self_coverage: true
 ```
 
 For single gpu user, you may change the `config.yaml` file to
+
 ```yaml
 gpus: 1
 # gpus: 4
@@ -79,13 +85,12 @@ gpus: 1
 ```
 
 ## Evaluation
+
 Metrics used in validation during the training process is not accurate.
 
 For accurate metrics reported in the paper, please use tools officially provided by CROHME 2019 oganizer:
 
 A trained CoMER(Fusion) weight checkpoint has been saved in `lightning_logs/version_0`
-
-
 
 ```bash
 perl --version  # make sure you have installed perl 5

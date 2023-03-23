@@ -129,3 +129,19 @@ result.zip
 test_temp
 Results_pred_symlg
 *.tfevents.*
+
+# Mac
+.DS_Store
+
+# VSCode
+__pycache__
+.vscode
+
+# Git
+.gitignore
+
+# JetBrains
+.idea
+
+# Jupyter
+.ipynb_checkpoints

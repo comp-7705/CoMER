@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 from zipfile import ZipFile
 
 import numpy as np
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 from comer.datamodule.dataset import CROHMEDataset
 from PIL import Image

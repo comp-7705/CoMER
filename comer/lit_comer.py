@@ -1,7 +1,7 @@
 import zipfile
 from typing import List
 
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch.optim as optim
 from torch import FloatTensor, LongTensor
 

@@ -1,7 +1,7 @@
 import math
-from typing import Tuple
+from typing import Tuple, List
 
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -140,13 +140,38 @@ class DenseNet(nn.Module):
         return out, out_mask
 
 
+class PPM(pl.LightningModule):
+    def __init__(self, in_dim: int, reduction_dim: int, bins: List[int]):
+        super(PPM, self).__init__()
+        self.features = []
+        for bin in bins:
+            self.features.append(nn.Sequential(
+                nn.AdaptiveAvgPool2d(bin),
+                nn.Conv2d(in_dim, reduction_dim, kernel_size=1, bias=False),
+                nn.BatchNorm2d(reduction_dim),
+                nn.ReLU(inplace=True)
+            ))
+        self.features = nn.ModuleList(self.features)
+
+    def forward(self, x):
+        x_size = x.size()
+        out = [x]
+        for f in self.features:
+            out.append(F.interpolate(f(x), x_size[2:], mode='bilinear', align_corners=True))
+        return torch.cat(out, 1)
+
+
 class Encoder(pl.LightningModule):
     def __init__(self, d_model: int, growth_rate: int, num_layers: int):
         super().__init__()
 
         self.model = DenseNet(growth_rate=growth_rate, num_layers=num_layers)
 
-        self.feature_proj = nn.Conv2d(self.model.out_channels, d_model, kernel_size=1)
+        bins = [1, 2, 4]
+        self.ppm = PPM(in_dim=self.model.out_channels,
+                       reduction_dim=d_model, bins=bins)
+
+        self.feature_proj = nn.Conv2d(d_model * len(bins), d_model, kernel_size=1)
 
         self.pos_enc_2d = ImgPosEnc(d_model, normalize=True)
 

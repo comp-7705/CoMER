@@ -15,12 +15,11 @@ from pydantic import BaseModel
 
 app = FastAPI()
 device = "cpu"
+ckp_path = "lightning_logs/version_0/checkpoints/epoch=151-step=57151-val_ExpRate=0.6365.ckpt"
+model = LitCoMER.load_from_checkpoint(ckp_path, map_location=device)
+model.eval()
 
-def init_model():
-    ckp_path = "lightning_logs/version_0/checkpoints/epoch=151-step=57151-val_ExpRate=0.6365.ckpt"
-    model = LitCoMER.load_from_checkpoint(ckp_path, map_location=device)
-    model.eval()
-
+def init_model(model=model):
     return model
 
 class Buffer(BaseModel):

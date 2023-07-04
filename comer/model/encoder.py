@@ -1,5 +1,5 @@
 import math
-from typing import Tuple
+from typing import Tuple, List
 
 import pytorch_lightning as pl
 import torch
@@ -140,13 +140,53 @@ class DenseNet(nn.Module):
         return out, out_mask
 
 
+class PPMBlock(nn.Module):
+    def __init__(self, in_dim: int, out_dim: int, bin: int) -> None:
+        super().__init__()
+        self.bin = bin
+        self.pool = nn.AdaptiveAvgPool2d(bin)
+        self.conv = nn.Conv2d(in_dim, out_dim, kernel_size=1, bias=False)
+        self.bn = nn.BatchNorm2d(out_dim)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        use_bn = x.shape[0] * self.bin > 1
+        out = self.conv(self.pool(x))
+        if use_bn:
+            out = self.bn(out)
+        out = self.relu(out)
+        return out
+
+
+class PPM(nn.Module):
+    def __init__(self, in_dim: int, reduction_dim: int, bins: List[int]):
+        super(PPM, self).__init__()
+        self.features = []
+        for bin in bins:
+            self.features.append(PPMBlock(in_dim, reduction_dim, bin))
+        self.features = nn.ModuleList(self.features)
+
+    def forward(self, x):
+        x_size = x.size()
+        out = [x]
+        for f in self.features:
+            out.append(F.interpolate(f(x), x_size[2:],
+                                     mode='bilinear', align_corners=True))
+        return torch.cat(out, 1)
+
+
 class Encoder(pl.LightningModule):
     def __init__(self, d_model: int, growth_rate: int, num_layers: int):
         super().__init__()
 
         self.model = DenseNet(growth_rate=growth_rate, num_layers=num_layers)
 
-        self.feature_proj = nn.Conv2d(self.model.out_channels, d_model, kernel_size=1)
+        # in_dim: 684, d_model: 256
+        bins = [1, 2, 4]
+        in_dim = self.model.out_channels
+        self.ppm = PPM(in_dim, in_dim // len(bins), bins)
+
+        self.feature_proj = nn.Conv2d(in_dim * 2, d_model, kernel_size=1)
 
         self.pos_enc_2d = ImgPosEnc(d_model, normalize=True)
 
@@ -171,6 +211,9 @@ class Encoder(pl.LightningModule):
         """
         # extract feature
         feature, mask = self.model(img, img_mask)
+
+        feature = self.ppm(feature)
+
         feature = self.feature_proj(feature)
 
         # proj

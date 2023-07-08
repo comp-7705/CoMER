@@ -59,13 +59,13 @@ class CoMER(pl.LightningModule):
         FloatTensor
             [2b, l, vocab_size]
         """
-        feature, mask = self.encoder(img, img_mask)  # [b, t, d]
+        cnt_pred, feature, mask = self.encoder(img, img_mask)  # [b, t, d]
         feature = torch.cat((feature, feature), dim=0)  # [2b, t, d]
         mask = torch.cat((mask, mask), dim=0)
 
         out = self.decoder(feature, mask, tgt)
 
-        return out
+        return cnt_pred, out
 
     def beam_search(
         self,
@@ -93,7 +93,7 @@ class CoMER(pl.LightningModule):
         -------
         List[Hypothesis]
         """
-        feature, mask = self.encoder(img, img_mask)  # [b, t, d]
+        cnt_perd, feature, mask = self.encoder(img, img_mask)  # [b, t, d]
         return self.decoder.beam_search(
             [feature], [mask], beam_size, max_len, alpha, early_stopping, temperature
         )

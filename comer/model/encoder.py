@@ -9,6 +9,7 @@ from einops.einops import rearrange
 from torch import FloatTensor, LongTensor
 
 from .pos_enc import ImgPosEnc
+from .counting import AuxiliaryCounting
 
 
 # DenseNet-B
@@ -152,6 +153,10 @@ class Encoder(pl.LightningModule):
 
         self.norm = nn.LayerNorm(d_model)
 
+        # 684, 111
+        self.cnt1 = AuxiliaryCounting(self.model.out_channels, 111, 3)
+        self.cnt2 = AuxiliaryCounting(self.model.out_channels, 111, 5)
+
     def forward(
         self, img: FloatTensor, img_mask: LongTensor
     ) -> Tuple[FloatTensor, LongTensor]:
@@ -171,6 +176,9 @@ class Encoder(pl.LightningModule):
         """
         # extract feature
         feature, mask = self.model(img, img_mask)
+        cnt_pred1, cnt_map1 = self.cnt1(feature, mask)
+        cnt_pred2, cnt_map2 = self.cnt2(feature, mask)
+
         feature = self.feature_proj(feature)
 
         # proj
@@ -181,4 +189,4 @@ class Encoder(pl.LightningModule):
         feature = self.norm(feature)
 
         # flat to 1-D
-        return feature, mask
+        return (cnt_pred1, cnt_pred2), feature, mask

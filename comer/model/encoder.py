@@ -153,9 +153,9 @@ class Encoder(pl.LightningModule):
 
         self.norm = nn.LayerNorm(d_model)
 
-        # 684, 111
-        self.cnt1 = AuxiliaryCounting(self.model.out_channels, 111, 3)
-        self.cnt2 = AuxiliaryCounting(self.model.out_channels, 111, 5)
+        # 684, 113
+        self.cnt1 = AuxiliaryCounting(self.model.out_channels, 113, 3)
+        self.cnt2 = AuxiliaryCounting(self.model.out_channels, 113, 5)
 
     def forward(
         self, img: FloatTensor, img_mask: LongTensor

@@ -15,15 +15,15 @@ from .vocab import vocab
 
 Data = List[Tuple[str, Image.Image, List[str]]]
 
-MAX_SIZE = 32e4  # change here accroading to your GPU memory
+# MAX_SIZE = 32e4  # change here accroading to your GPU memory
 
 # load data
 def data_iterator(
     data: Data,
     batch_size: int,
-    batch_Imagesize: int = MAX_SIZE,
+    batch_Imagesize: int = 1e6,
     maxlen: int = 200,
-    maxImagesize: int = MAX_SIZE,
+    maxImagesize: int = 32e4,
 ):
     fname_batch = []
     feature_batch = []

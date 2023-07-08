@@ -37,29 +37,32 @@ class AuxiliaryCounting(nn.Module):
         b, c, h, w = x.size()
         x = self.trans_layer(x)  # B, 512, H, W
         x = self.channel_att(x)  # B, 512, H, W
-        x = self.pred_layer(x)  # B, 111, H, W
+        x = self.pred_layer(x)  # B, 113, H, W
         if mask is not None:
-            x = x * mask
+            # B, H, W -> B, 1, H, W
+            x = x * mask.unsqueeze(1)
         x = x.view(b, self.out_channel, -1)
         x1 = torch.sum(x, dim=-1)
         return x1, x.view(b, self.out_channel, h, w)
 
 
 def gen_counting_label(labels, channel):
-    b, t = labels.size()
-    device = labels.device
+    b = len(labels)
     counting_labels = torch.zeros((b, channel))
+    ignore = [0, 1, 2]  # ignore sos, eos, pad
     for i in range(b):
-        for j in range(t):
-            k = labels[i][j]
-            counting_labels[i][k] += 1
-    return counting_labels.to(device)
+        for idx in labels[i]:
+            if idx in ignore:
+                continue
+            else:
+                counting_labels[i][idx] += 1
+    return counting_labels
 
 
 def cnt_loss(cnt_pred, indices):
     cnt_pred1, cnt_pred2 = cnt_pred
     cnt_pred = (cnt_pred1 + cnt_pred2) / 2
-    cnt_lbl = gen_counting_label(indices, 111)
+    cnt_lbl = gen_counting_label(indices, 113).to(cnt_pred.device)
     loss = F.smooth_l1_loss
     cnt_loss = loss(cnt_pred1, cnt_lbl) + loss(cnt_pred2, cnt_lbl) + loss(cnt_pred, cnt_lbl)
     return cnt_loss

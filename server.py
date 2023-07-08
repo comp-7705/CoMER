@@ -14,9 +14,13 @@ from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 
 app = FastAPI()
-device = "cpu"
-ckp_path = "lightning_logs/version_0/checkpoints/epoch=151-step=57151-val_ExpRate=0.6365.ckpt"
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")
+else:
+    device = torch.device("cpu")
+ckp_path = "lightning_logs/backup/checkpoints/epoch=151-step=57151-val_ExpRate=0.6365.ckpt"
 model = LitCoMER.load_from_checkpoint(ckp_path, map_location=device)
+model.to(device)
 model.eval()
 
 def init_model(model=model):
@@ -33,8 +37,10 @@ async def predict(buffer: Buffer, model: Annotated[LitCoMER, Depends(init_model)
     img = Image.fromarray(np.array(img))
 
     img = ToTensor()(img).to(device)
-    mask = torch.zeros_like(img, dtype=torch.bool)
-    hyp = model.approximate_joint_search(img.unsqueeze(0), mask)[0]
+    mask = torch.zeros_like(img, dtype=torch.bool).to(device)
+
+    with torch.no_grad():
+        hyp = model.approximate_joint_search(img.unsqueeze(0), mask)[0]
     pred_latex = vocab.indices2label(hyp.seq)
 
     return pred_latex
